@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gift List — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #10201f; --card: #17302d; --card-border: rgba(232,184,75,0.20);
+    --gold: #e8b84b; --green: #7bc79e; --danger: #e88c8c;
+    --text: #f4efe4; --muted: #93a8a3;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; min-height: 100vh; }
+  h1, h2, .display { font-family: 'Fraunces', serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  header { padding: 26px 20px; text-align: center; border-bottom: 1px solid var(--card-border); }
+  header h1 { font-size: 22px; margin: 0; font-weight: 600; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+  .card {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 8px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  .card h2 { font-size: 16px; margin: 0 0 14px; font-weight: 600; border-bottom: 1px solid #22423d; padding-bottom: 10px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+  .stat { background: #0e211f; border: 1px solid #22423d; border-radius: 6px; padding: 14px; text-align: center; }
+  .stat .num { font-size: 26px; font-weight: 700; font-family: 'Fraunces', serif; color: var(--gold); }
+  .stat .label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea {
+    width: 100%; padding: 9px 11px; border-radius: 5px; border: 1px solid #2a5951;
+    background: #0e211f; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13.5px;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  button {
+    padding: 9px 16px; border-radius: 5px; border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px;
+  }
+  button.primary { background: var(--gold); color: #1c1300; }
+  button.secondary { background: transparent; border: 1px solid #2a5951 !important; color: var(--muted); }
+  button.danger { background: var(--danger); color: #2a0a0a; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+  th, td { border: 1px solid #22423d; padding: 7px 8px; text-align: left; vertical-align: top; }
+  th { background: #0e211f; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .status-tag { font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 1px solid; display: inline-block; margin: 1px 0; }
+  .status-tag.open { color: var(--muted); border-color: #2a5951; }
+  .status-tag.claimed { color: var(--gold); border-color: var(--gold); }
+  .status-tag.purchased { color: var(--green); border-color: var(--green); }
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .row-actions button { padding: 4px 9px; font-size: 11.5px; }
+  .output { margin-top: 10px; padding: 9px 12px; border-radius: 5px; font-size: 13px; display: none; }
+  .output.show { display: block; }
+  .output.error { background: rgba(232,140,140,0.12); color: var(--danger); border: 1px solid var(--danger); }
+  .output.success { background: rgba(123,199,158,0.12); color: var(--green); border: 1px solid var(--green); }
+  .log-entry { padding: 7px 0; border-bottom: 1px solid #22423d; font-size: 12.5px; }
+  .log-entry .meta { color: var(--muted); font-size: 11px; }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .add-row > div { flex: 1; min-width: 140px; }
+  .small-note { font-size: 11px; color: #6f8b85; margin-top: 6px; }
+</style>
+</head>
+<body>
+<header><h1>🎁 Gift List — Admin</h1></header>
+<main id="main">
+  <div class="card">
+    <h2>Log In</h2>
+    <label>Admin password:</label>
+    <input type="password" id="pw">
+    <button class="primary" style="margin-top:12px;" onclick="login()">Log In</button>
+    <div class="output" id="loginOut"></div>
+  </div>
+</main>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHpX2XT62wveEQ50uaUwN-rEq7NGCNSZCEHtkvl10bpT-pUQAe5QqMx3vwJ3pAnfqCvA/exec';
+let password = null;
+let lastData = null;
+
+async function api(action, params) {
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', action);
+  for (const k in (params || {})) url.searchParams.set(k, params[k]);
+  const res = await fetch(url.toString());
+  return res.json();
+}
+
+async function login() {
+  password = document.getElementById('pw').value;
+  const out = document.getElementById('loginOut');
+  const data = await api('adminLogin', { password });
+  if (data.error) { out.className = 'output show error'; out.textContent = data.error; return; }
+  loadDashboard();
+}
+
+async function loadDashboard() {
+  document.getElementById('main').innerHTML = `<div class="card">Loading…</div>`;
+  const data = await api('adminGetAll', { password });
+  if (data.error) { renderLogin(); return; }
+  lastData = data;
+  render();
+}
+
+function renderLogin() {
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <h2>Log In</h2>
+      <label>Admin password:</label>
+      <input type="password" id="pw">
+      <button class="primary" style="margin-top:12px;" onclick="login()">Log In</button>
+      <div class="output" id="loginOut"></div>
+    </div>`;
+}
+
+function computeStats(items) {
+  let totalSlots = 0, claimed = 0, purchased = 0;
+  const claimants = new Set();
+  items.forEach(it => it.slots.forEach(s => {
+    totalSlots++;
+    if (s.claimedBy) { claimed++; claimants.add(s.claimedBy); }
+    if (s.purchased) purchased++;
+  }));
+  return { totalItems: items.length, totalSlots, claimed, purchased, open: totalSlots - claimed, claimants: claimants.size };
+}
+
+function render() {
+  const d = lastData;
+  const stats = computeStats(d.items);
+
+  const itemRows = d.items.map(it => {
+    const slotHtml = it.slots.map(s => {
+      let cls = 'open', label = 'Open';
+      if (s.purchased) { cls = 'purchased'; label = `Purchased — ${s.claimedBy}`; }
+      else if (s.claimedBy) { cls = 'claimed'; label = `Claimed — ${s.claimedBy}`; }
+      return `<span class="status-tag ${cls}">${label}</span>`;
+    }).join('<br>');
+
+    return `
+      <tr>
+        <td>${it.item}${it.qty > 1 ? ` <span class="small-note">(×${it.qty})</span>` : ''}</td>
+        <td>${it.notes || ''}</td>
+        <td>${slotHtml}</td>
+        <td>
+          <div class="row-actions">
+            <button class="secondary" onclick="editItem('${it.id}')">Edit</button>
+            <button class="danger" onclick="deleteItem('${it.id}', '${escAttr(it.item)}')">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  const logHtml = d.log.map(l => `
+    <div class="log-entry">
+      <div>${l.details}</div>
+      <div class="meta">${new Date(l.time).toLocaleString()} · ${l.type} · ${l.who}</div>
+    </div>`).join('') || '<div class="small-note">No activity yet.</div>';
+
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <h2>Overview</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="num">${stats.totalItems}</div><div class="label">Items</div></div>
+        <div class="stat"><div class="num">${stats.open}</div><div class="label">Open slots</div></div>
+        <div class="stat"><div class="num">${stats.claimed}</div><div class="label">Claimed</div></div>
+        <div class="stat"><div class="num">${stats.purchased}</div><div class="label">Purchased</div></div>
+        <div class="stat"><div class="num">${stats.claimants}</div><div class="label">People helping</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Add an Item</h2>
+      <div class="add-row">
+        <div><label>Item</label><input id="newItem" placeholder="e.g. Noise-cancelling headphones"></div>
+        <div><label>Notes / link</label><input id="newNotes" placeholder="Size, color, link, etc."></div>
+        <div style="max-width:90px;"><label>Qty wanted</label><input id="newQty" type="number" min="1" value="1"></div>
+        <div style="flex:0;"><button class="primary" onclick="addItem()">Add</button></div>
+      </div>
+      <div class="output" id="addOut"></div>
+    </div>
+
+    <div class="card">
+      <h2>Items</h2>
+      <table>
+        <tr><th>Item</th><th>Notes</th><th>Status</th><th>Actions</th></tr>
+        ${itemRows || '<tr><td colspan="4">No items yet.</td></tr>'}
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>List Settings</h2>
+      <label>List title</label>
+      <input id="set_list_title" value="${String(d.settings.list_title).replace(/"/g,'&quot;')}">
+      <label>Instructions shown at top of the public page</label>
+      <textarea id="set_instructions">${String(d.settings.instructions)}</textarea>
+      <label>Claiming enabled</label>
+      <div style="display:flex; gap:8px; margin-top:4px;">
+        <button class="secondary" style="${String(d.settings.signup_enabled).toUpperCase()==='TRUE' ? 'background:var(--gold);color:#1c1300;' : ''}" onclick="quickSetting('signup_enabled','TRUE')">On</button>
+        <button class="secondary" style="${String(d.settings.signup_enabled).toUpperCase()!=='TRUE' ? 'background:var(--danger);color:#2a0a0a;' : ''}" onclick="quickSetting('signup_enabled','FALSE')">Off</button>
+      </div>
+      <button class="primary" style="margin-top:14px;" onclick="saveTextSettings()">Save Settings</button>
+      <div class="output" id="settingsOut"></div>
+      <div class="small-note">Admin password is stored in the Settings sheet (key: admin_password) — change it by editing the sheet directly.</div>
+    </div>
+
+    <div class="card">
+      <h2>Recent Activity</h2>
+      <div style="max-height:320px; overflow-y:auto;">${logHtml}</div>
+    </div>
+  `;
+}
+
+function escAttr(s) { return String(s).replace(/'/g, "\\'"); }
+
+async function addItem() {
+  const item = document.getElementById('newItem').value.trim();
+  const notes = document.getElementById('newNotes').value.trim();
+  const qty = document.getElementById('newQty').value;
+  const out = document.getElementById('addOut');
+  if (!item) { out.className = 'output show error'; out.textContent = 'Enter an item name.'; return; }
+  const data = await api('adminAddItem', { password, item, notes, qty });
+  if (data.error) { out.className = 'output show error'; out.textContent = data.error; return; }
+  loadDashboard();
+}
+
+async function deleteItem(id, name) {
+  if (!confirm(`Delete "${name}"? This can't be undone.`)) return;
+  await api('adminDeleteItem', { password, id });
+  loadDashboard();
+}
+
+function editItem(id) {
+  const it = lastData.items.find(x => x.id === id);
+  const newName = prompt('Item name:', it.item);
+  if (newName === null) return;
+  const newNotes = prompt('Notes / link:', it.notes);
+  if (newNotes === null) return;
+  const newQty = prompt('Quantity wanted:', it.qty);
+  if (newQty === null) return;
+  api('adminUpdateItem', { password, id, item: newName, notes: newNotes, qty: newQty }).then(loadDashboard);
+}
+
+async function quickSetting(key, value) {
+  await api('adminUpdateSetting', { password, key, value });
+  loadDashboard();
+}
+
+async function saveTextSettings() {
+  const out = document.getElementById('settingsOut');
+  await api('adminUpdateSetting', { password, key: 'list_title', value: document.getElementById('set_list_title').value });
+  await api('adminUpdateSetting', { password, key: 'instructions', value: document.getElementById('set_instructions').value });
+  out.className = 'output show success'; out.textContent = 'Saved.';
+  setTimeout(loadDashboard, 800);
+}
+</script>
+</body>
+</html>

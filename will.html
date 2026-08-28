@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Will's Gift List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f2e2b;
+    --bg-alt: #123833;
+    --card: #163d38;
+    --card-border: rgba(232, 184, 75, 0.22);
+    --gold: #e8b84b;
+    --gold-dim: #a9822f;
+    --green: #7bc79e;
+    --text: #f4efe4;
+    --muted: #9db3ae;
+    --danger: #e88c8c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(232,184,75,0.10), transparent 40%),
+      radial-gradient(circle at 85% 92%, rgba(123,199,158,0.08), transparent 45%);
+    color: var(--text);
+    margin: 0;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .display { font-family: 'Fraunces', serif; }
+  header {
+    padding: 36px 20px 20px;
+    text-align: center;
+  }
+  header .eyebrow {
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 8px; font-weight: 600;
+  }
+  header h1 {
+    font-size: 30px; font-weight: 600; margin: 0 0 6px; color: var(--text);
+  }
+  main {
+    max-width: 620px; margin: 0 auto; padding: 0 16px 60px;
+  }
+  .instructions {
+    background: var(--bg-alt);
+    border: 1px solid var(--card-border);
+    border-left: 4px solid var(--gold);
+    border-radius: 6px;
+    padding: 16px 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #dce9e4;
+    margin-bottom: 24px;
+    white-space: pre-wrap;
+  }
+  .instructions strong { color: var(--gold); }
+  .instructions .warn {
+    display: block; margin-top: 10px; color: var(--danger); font-weight: 600; font-size: 13px;
+  }
+  .toolbar {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .toolbar input[type=text] {
+    flex: 1; min-width: 160px;
+    padding: 9px 12px; border-radius: 5px; border: 1px solid #2a5951;
+    background: #0d2320; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13.5px;
+  }
+  .toolbar button {
+    padding: 9px 14px; border-radius: 5px; border: 1px solid #2a5951; background: transparent;
+    color: var(--muted); cursor: pointer; font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
+  }
+  .toolbar button.active { background: var(--gold); color: #1c1300; border-color: var(--gold); }
+
+  .item-card {
+    background-color: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  }
+  .item-top {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  }
+  .item-name { font-size: 17px; font-weight: 600; margin: 0; }
+  .item-notes { font-size: 13px; color: var(--muted); margin: 4px 0 0; line-height: 1.5; }
+  .item-notes a { color: var(--gold); }
+  .qty-pill {
+    font-size: 11px; color: var(--muted); border: 1px solid #2a5951; border-radius: 20px;
+    padding: 2px 9px; white-space: nowrap; font-family: 'Inter', sans-serif;
+  }
+  .slots { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .slot {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 12px; border-radius: 6px; background: #0d2320; border: 1px solid #1d453f;
+  }
+  .slot.mine { border-color: var(--gold); background: #241a06; }
+  .slot.purchased { border-color: var(--green); }
+  .slot-label { font-size: 13.5px; }
+  .slot-label .tag { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+  .slot-label .tag.mine-tag { color: var(--gold); }
+  .slot-label .tag.done-tag { color: var(--green); }
+  .slot button {
+    padding: 7px 13px; border-radius: 5px; border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  }
+  .btn-claim { background: var(--gold); color: #1c1300; }
+  .btn-claim:hover { background: #f0c766; }
+  .btn-purchased { background: var(--green); color: #06251a; }
+  .btn-purchased:hover { background: #93d6b0; }
+  .btn-cancel { background: transparent; color: var(--danger); border: 1px solid var(--danger) !important; }
+  .btn-cancel:hover { background: rgba(232,140,140,0.12); }
+  .btn-claimme { background: transparent; color: var(--muted); border: 1px solid #2a5951 !important; }
+
+  .empty-state { text-align: center; color: var(--muted); padding: 40px 10px; font-size: 14px; }
+
+  /* modal */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 8px;
+    padding: 22px; max-width: 380px; width: 100%;
+  }
+  .modal h3 { margin: 0 0 10px; font-size: 17px; }
+  .modal p { font-size: 13.5px; color: var(--muted); margin: 0 0 14px; line-height: 1.5; }
+  .modal input {
+    width: 100%; padding: 10px 12px; border-radius: 5px; border: 1px solid #2a5951;
+    background: #0d2320; color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px; margin-bottom: 12px;
+  }
+  .modal .row { display: flex; gap: 10px; }
+  .modal .row button {
+    flex: 1; padding: 10px; border-radius: 5px; border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px;
+  }
+  .modal .confirm { background: var(--gold); color: #1c1300; }
+  .modal .dismiss { background: transparent; border: 1px solid #2a5951 !important; color: var(--muted); }
+  .modal .error-msg { color: var(--danger); font-size: 12.5px; margin: -4px 0 10px; display: none; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--gold); color: var(--text);
+    padding: 12px 18px; border-radius: 6px; font-size: 13.5px; max-width: 90%;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4); display: none; z-index: 60; text-align: center;
+  }
+  .toast.show { display: block; }
+  .loading-line { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Shh — keep this link a secret 🎁</div>
+  <h1 id="pageTitle">Will's Gift List</h1>
+</header>
+
+<main>
+  <div class="instructions" id="instructionsBox">Loading...</div>
+
+  <div class="toolbar">
+    <input type="text" id="nameFilter" placeholder="Your name (to highlight your claims)">
+    <button id="myClaimsBtn" type="button">Show my claims</button>
+  </div>
+
+  <div id="listBox"><div class="loading-line">Loading gift list…</div></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalBox"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
+const LS_KEY = 'giftlist_claims_v1';
+
+let allItems = [];
+let showMineOnly = false;
+
+function getLocalClaims() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch (e) { return {}; }
+}
+function saveLocalClaim(id, slotIndex, name) {
+  const c = getLocalClaims();
+  c[id + ':' + slotIndex] = { name };
+  localStorage.setItem(LS_KEY, JSON.stringify(c));
+}
+function removeLocalClaim(id, slotIndex) {
+  const c = getLocalClaims();
+  delete c[id + ':' + slotIndex];
+  localStorage.setItem(LS_KEY, JSON.stringify(c));
+}
+function isLocallyMine(id, slotIndex) {
+  const c = getLocalClaims();
+  return !!c[id + ':' + slotIndex];
+}
+
+async function api(action, params) {
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', action);
+  for (const k in (params || {})) url.searchParams.set(k, params[k]);
+  const res = await fetch(url.toString());
+  return res.json();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show';
+  setTimeout(() => t.className = 'toast', 4000);
+}
+
+function closeModal() {
+  document.getElementById('overlay').className = 'overlay';
+  document.getElementById('modalBox').innerHTML = '';
+}
+
+function openModal(html) {
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('overlay').className = 'overlay show';
+}
+
+async function loadList() {
+  const data = await api('getPublicList', {});
+  if (data.error) {
+    document.getElementById('listBox').innerHTML = `<div class="empty-state">Couldn't load the list: ${data.error}</div>`;
+    return;
+  }
+  document.getElementById('pageTitle').textContent = data.title;
+  document.title = data.title;
+  document.getElementById('instructionsBox').innerHTML =
+    data.instructions.replace(/\n/g, '<br>') +
+    '<span class="warn">⚠️ Do not share this link or screen with the birthday person, and don\'t open it on a device they might see.</span>';
+  allItems = data.items;
+  renderList();
+}
+
+function renderList() {
+  const filterName = document.getElementById('nameFilter').value.trim().toLowerCase();
+  const box = document.getElementById('listBox');
+
+  let itemsToShow = allItems;
+  if (showMineOnly) {
+    itemsToShow = allItems.filter(it => it.slots.some(s =>
+      (filterName && s.claimedBy.toLowerCase() === filterName) || isLocallyMine(it.id, s.slotIndex)
+    ));
+  }
+
+  if (itemsToShow.length === 0) {
+    box.innerHTML = `<div class="empty-state">${showMineOnly ? "You haven't claimed anything yet." : 'No items on the list yet — check back soon.'}</div>`;
+    return;
+  }
+
+  box.innerHTML = itemsToShow.map(it => {
+    const slotsHtml = it.slots.map(s => {
+      const mine = isLocallyMine(it.id, s.slotIndex) || (filterName && s.claimedBy.toLowerCase() === filterName);
+      const claimed = !!s.claimedBy;
+      let cls = 'slot';
+      if (mine && claimed) cls += ' mine';
+      if (s.purchased) cls += ' purchased';
+
+      let label, actions;
+      if (!claimed) {
+        label = it.qty > 1 ? `Open slot ${s.slotIndex + 1} of ${it.qty}` : 'Not claimed yet';
+        actions = `<button class="btn-claim" onclick="openClaimModal('${it.id}', ${s.slotIndex}, '${escAttr(it.item)}')">Claim it</button>`;
+      } else {
+        const tagClass = s.purchased ? 'done-tag' : (mine ? 'mine-tag' : '');
+        const tagText = s.purchased ? `✓ Purchased by ${s.claimedBy}` : `Claimed by ${s.claimedBy}`;
+        label = `<span class="tag ${tagClass}">${tagText}</span>`;
+        if (mine && !s.purchased) {
+          actions = `
+            <button class="btn-purchased" onclick="openConfirmModal('purchase','${it.id}',${s.slotIndex},'${escAttr(it.item)}')">Mark Purchased</button>
+            <button class="btn-cancel" onclick="openConfirmModal('cancel','${it.id}',${s.slotIndex},'${escAttr(it.item)}')">Cancel</button>`;
+        } else if (mine && s.purchased) {
+          actions = `<button class="btn-claimme" onclick="openConfirmModal('unpurchase','${it.id}',${s.slotIndex},'${escAttr(it.item)}')">Undo purchased</button>`;
+        } else {
+          actions = `<button class="btn-claimme" onclick="openConfirmModal('claimmine','${it.id}',${s.slotIndex},'${escAttr(it.item)}')">This is me</button>`;
+        }
+      }
+      return `<div class="${cls}"><div class="slot-label">${label}</div><div style="display:flex; gap:6px; flex-wrap:wrap;">${actions}</div></div>`;
+    }).join('');
+
+    return `
+      <div class="item-card">
+        <div class="item-top">
+          <div>
+            <p class="item-name">${it.item}</p>
+            ${it.notes ? `<p class="item-notes">${linkify(it.notes)}</p>` : ''}
+          </div>
+          ${it.qty > 1 ? `<span class="qty-pill">×${it.qty} wanted</span>` : ''}
+        </div>
+        <div class="slots">${slotsHtml}</div>
+      </div>`;
+  }).join('');
+}
+
+function escAttr(s) { return String(s).replace(/'/g, "\\'"); }
+function linkify(text) {
+  const urlRe = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRe, url => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`);
+}
+
+function openClaimModal(id, slotIndex, itemName) {
+  openModal(`
+    <h3>Claim "${itemName}"</h3>
+    <p>Enter your name so the group knows this one's covered. You can come back anytime with the same name to update it.</p>
+    <div class="error-msg" id="modalError"></div>
+    <input type="text" id="modalName" placeholder="Your name" autocomplete="off">
+    <div class="row">
+      <button class="dismiss" onclick="closeModal()">Cancel</button>
+      <button class="confirm" onclick="submitClaim('${id}', ${slotIndex})">Claim it</button>
+    </div>
+  `);
+}
+
+async function submitClaim(id, slotIndex) {
+  const name = document.getElementById('modalName').value.trim();
+  const err = document.getElementById('modalError');
+  if (!name) { err.style.display = 'block'; err.textContent = 'Please enter your name.'; return; }
+  const data = await api('claimItem', { id, name });
+  if (data.error) { err.style.display = 'block'; err.textContent = data.error; return; }
+  saveLocalClaim(id, data.slotIndex, name);
+  closeModal();
+  showToast(data.message);
+  loadList();
+}
+
+// Unified confirm modal for cancel / purchase / unpurchase / "this is me"
+function openConfirmModal(kind, id, slotIndex, itemName) {
+  const copy = {
+    cancel: { title: `Cancel claim on "${itemName}"?`, body: 'This frees it up for someone else to claim. Enter your name to confirm it\'s you.', btn: 'Cancel my claim', action: 'cancelClaim' },
+    purchase: { title: `Mark "${itemName}" as purchased?`, body: 'Enter your name to confirm.', btn: 'Mark purchased', action: 'markPurchased' },
+    unpurchase: { title: `Undo purchased on "${itemName}"?`, body: 'Enter your name to confirm.', btn: 'Undo', action: 'unmarkPurchased' },
+    claimmine: { title: `Is "${itemName}" yours?`, body: 'If you claimed this on another device, enter the exact name you used and we\'ll sync it here.', btn: 'Yes, this is mine', action: 'confirmMine' }
+  }[kind];
+  openModal(`
+    <h3>${copy.title}</h3>
+    <p>${copy.body}</p>
+    <div class="error-msg" id="modalError"></div>
+    <input type="text" id="modalName" placeholder="Your name" autocomplete="off">
+    <div class="row">
+      <button class="dismiss" onclick="closeModal()">Never mind</button>
+      <button class="confirm" onclick="submitConfirm('${copy.action}', '${id}', ${slotIndex})">${copy.btn}</button>
+    </div>
+  `);
+}
+
+async function submitConfirm(action, id, slotIndex) {
+  const name = document.getElementById('modalName').value.trim();
+  const err = document.getElementById('modalError');
+  if (!name) { err.style.display = 'block'; err.textContent = 'Please enter your name.'; return; }
+
+  if (action === 'confirmMine') {
+    // Verify locally against current data rather than hitting a write endpoint
+    const item = allItems.find(it => it.id === id);
+    const slot = item && item.slots[slotIndex];
+    if (!slot || slot.claimedBy.toLowerCase() !== name.toLowerCase()) {
+      err.style.display = 'block'; err.textContent = 'That name doesn\'t match who claimed this.'; return;
+    }
+    saveLocalClaim(id, slotIndex, name);
+    closeModal();
+    showToast('Synced — this claim now shows as yours on this device.');
+    renderList();
+    return;
+  }
+
+  const data = await api(action, { id, slotIndex, name });
+  if (data.error) { err.style.display = 'block'; err.textContent = data.error; return; }
+  if (action === 'cancelClaim') removeLocalClaim(id, slotIndex);
+  closeModal();
+  showToast(data.message);
+  loadList();
+}
+
+document.getElementById('myClaimsBtn').addEventListener('click', () => {
+  showMineOnly = !showMineOnly;
+  document.getElementById('myClaimsBtn').className = showMineOnly ? 'active' : '';
+  renderList();
+});
+document.getElementById('nameFilter').addEventListener('input', () => renderList());
+document.getElementById('overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
+
+loadList();
+</script>
+</body>
+</html>
